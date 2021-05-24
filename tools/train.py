@@ -9,18 +9,20 @@ import torch.backends.cudnn as cudnn
 import torchvision
 
 
-# from model_512 import Net
-# from model_256 import Net
-# from model_128 import Net
-from model_64 import Net
-# from model_32 import Net
-# from model_16 import Net
+# from model.model_512 import Net
+# from model.model_256 import Net
+# from model.model_128 import Net
+from model.model_64 import Net
+# from model.model_32 import Net
+# from model.model_16 import Net
 
 parser = argparse.ArgumentParser(description="Train on mars")
 parser.add_argument("--data-dir",default='./data_mars',type=str)
 # parser.add_argument("--data-dir",default='./data_market1501',type=str)
 parser.add_argument("--no-cuda",action="store_true")
 parser.add_argument("--gpu-id",default=0,type=int)
+parser.add_argument("--bs",default=64,type=int)
+parser.add_argument("--epoch",default=40,type=int)
 parser.add_argument("--lr",default=0.1, type=float)
 parser.add_argument("--interval",'-i',default=20,type=int)
 parser.add_argument('--resume', '-r',action='store_true')  # transfer learning or not
@@ -34,8 +36,10 @@ if torch.cuda.is_available() and not args.no_cuda:
 
 # data loading
 root = args.data_dir
-train_dir = os.path.join(root,"train")
-test_dir = os.path.join(root,"test")
+# train_dir = os.path.join(root,"train")
+# test_dir = os.path.join(root,"test")
+train_dir = os.path.join(root,"bbox_train/bbox_train")
+test_dir = os.path.join(root,"bbox_test/bbox_test")
 # test_dir = os.path.join(root,"val")
 transform_train = torchvision.transforms.Compose([
     torchvision.transforms.RandomCrop((128,64),padding=4),
@@ -50,11 +54,11 @@ transform_test = torchvision.transforms.Compose([
 ])
 trainloader = torch.utils.data.DataLoader(
     torchvision.datasets.ImageFolder(train_dir, transform=transform_train),
-    batch_size=64,shuffle=True
+    batch_size=args.bs,shuffle=True
 )
 testloader = torch.utils.data.DataLoader(
     torchvision.datasets.ImageFolder(test_dir, transform=transform_test),
-    batch_size=64,shuffle=True
+    batch_size=args.bs,shuffle=True
 )
 num_classes = max(len(trainloader.dataset.classes), len(testloader.dataset.classes))
 
@@ -144,7 +148,7 @@ def test(epoch):
     if acc > best_acc:
         best_acc = acc
         # print("Saving parameters to checkpoint/deepsort_from0_ckpt.t7")
-        print("Saving parameters to checkpoint/64_mars_0_40_ckpt.t7")
+        print("Saving parameters to checkpoint/128_mars_0_40_ckpt.t7")
         checkpoint = {
             'net_dict':net.state_dict(),
             'acc':acc,
@@ -153,7 +157,7 @@ def test(epoch):
         if not os.path.isdir('checkpoint'):
             os.mkdir('checkpoint')
         # torch.save(checkpoint, './checkpoint/deepsort_from0_ckpt.t7')
-        torch.save(checkpoint, './checkpoint/64_mars_0_40_ckpt.t7')
+        torch.save(checkpoint, './checkpoint/128_mars_0_40_ckpt.t7')
 
 
     return test_loss/len(testloader), 1.- correct/total
@@ -180,7 +184,8 @@ def draw_curve(epoch, train_loss, train_err, test_loss, test_err):
         ax0.legend()
         ax1.legend()
     #fig.savefig("train.jpg")
-    fig.savefig("64_mars.jpg")
+    fig.savefig("128_mars.jpg")
+
 
 # lr decay
 def lr_decay():
@@ -190,8 +195,9 @@ def lr_decay():
         lr = params['lr']
         print("Learning rate adjusted to {}".format(lr))
 
+
 def main():
-    for epoch in range(start_epoch, start_epoch+40):
+    for epoch in range(start_epoch, start_epoch + args.epoch):
         train_loss, train_err = train(epoch)
         test_loss, test_err = test(epoch)
         draw_curve(epoch, train_loss, train_err, test_loss, test_err)
