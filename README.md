@@ -1,34 +1,92 @@
 # Deep SORT
 
-下载MOT16 MOT17
+下载MOT16 MOT17 放到deepsort_pytorch
+
+注意在MOT17/train 新建3个文件夹DPM,FRCNN,SDP并把对应的序列放入
 
 ## Training the RE-ID model
-dataset Market1501 Preparation 参考Person_ReID
+
+1. dataset Market1501 Preparation 
+
+下载Market1501数据集  运行data/Market_prepare.py (只需在第5行修改路径)
 
 把生成的pytorch文件夹copy到~/deepsort_pytorch/tools 并重命名为data_market1501
 
-dataset Mars Preparation 
+2. dataset Mars Preparation 
 
-下载Mars数据集 并重命名为data_mars 修改子文件名称改为train和test
+下载Mars数据集到~/deepsort_pytorch/tools 并重命名为data_mars 
 
-Then you can try train.py to train your own parameter and evaluate it using test.py and evaluate.py.
+3. 运行tools/train.py（从头开始训练）  或者tools/train.py --resume （迁移学习训练）
 
-注意tools/train.py需要修改
+注意需要修改
 
-import Net + dataset路径 + checkpoint路径 + save路径 + 保存jpg名称
+12-17行 选择需要的Net
 
-从头开始训练python3 train.py
+21-22行 选择需要的数据集路径 market1501/mars
 
-迁移学习训练python3 train.py --resume
+40-41行  如果选择market1501
+
+42-43行 如果选择mars
+
+70-72行  如果迁移学习 修改checkpoint路径
+
+152行  修改打印信息
+
+161行   修改save路径 
+
+188行   修改保存jpg名称
 
 ## Generate Detections (bbox->bbox+feature->detections.npy)
-deep_sort_app.py 修改create_detections里面 feature的选取位置
 
-tools/generate_detections_pytorch.py 修改mot_dir,output_dir,Extractor(model + XXX.t7)
+先确定所用detector的类型 和 所用Net的类型  
 
-## Evaluation 
+运行tools/generate_detections_pytorch.py 
 
-evaluate_motchallenge.py 修改mot_dir,detection_dir,output_dir (detections.npy -> deepsort结果 predict.txt)
+注意需要修改
 
-eval.py 修改result_filename,seqs_str,data_root (gt.txt + predict.txt -> MOTA,IDs) 
+6行 进入Extractor进而进入tools/feature_extractor.py 7-12行选择需要的Net
+
+74-75行 选择用CNN/HOG 提取特征
+
+86行 如果用CNN 修改对应Net的checkpoint路径
+
+100/108/120行 如果用HOG 修改维度信息
+
+135行  mot_dir 改为 "../MOT17/train/XXX"或者"../MOT16/train"
+
+136行  output_dir 改为希望 detections.npy保存的位置
+
+## Tracking (detections.npy -> deepsort结果 predict.txt)
+
+先确定所用detector的类型 
+
+修改deep_sort_app.py中125-127行 feature的选取位置
+
+运行evaluate_motchallenge.py
+
+注意需要修改
+
+ 13行  mot_dir   "MOT17/train/XXX"或者"MOT16/train"
+ 
+ 15行   detection_dir   改为之前保存 detections.npy的位置
+
+18行  output_dir   改为希望predict.txt保存的位置
+
+52行  display可以选择True/False
+ 
+ ## Evaluation (gt.txt + predict.txt -> MOTA,IDs) 
+
+先确定所用detector的类型
+
+运行eval.py
+
+注意需要修改
+
+32行 result_filename 改为之前保存predict.txt的位置
+
+48行  是否保存成一个表格
+
+67-99行  seqs_str  选择对应的detector的类型
+
+104-107行  data_root 选择对应的detector的类型
 
